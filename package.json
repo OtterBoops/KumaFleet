@@ -1,0 +1,30 @@
+{
+  "name": "kumafleet",
+  "version": "1.0.0",
+  "description": "Zero-touch, auto-discovery companion for Uptime Kuma and Docker.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": [
+    "uptime-kuma",
+    "docker",
+    "monitoring",
+    "auto-discovery",
+    "homelab"
+  ],
+  "author": "OtterBoops",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
