@@ -1,0 +1,42 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - kuma-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  kumafleet:
+    image: ghcr.io/otterboops/kumafleet:latest
+    container_name: kumafleet
+    restart: unless-stopped
+    depends_on:
+      - uptime-kuma
+    environment:
+      # Connection to Uptime Kuma 
+      - KUMA_URL=http://uptime-kuma:3001
+      - KUMA_USER=admin
+      - KUMA_PASS=your_strong_password
+
+      # Optional: automatically populate a status page
+      - STATUS_PAGE_SLUG=homelab
+
+      # Optional: sync interval in seconds (default: 30)
+      - SYNC_INTERVAL=30
+
+      # Optional: delete monitors in Kuma when container is destroyed
+      - CLEANUP_STALE=false
+
+      # Optional: comma-separated ignore list (wildcards supported)
+      - IGNORE_CONTAINERS=kumafleet,uptime-kuma,*-dev,test-*
+
+      # Optional: ignore Docker buildx / buildkit builders (default: true)
+      # - SKIP_BUILDX=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  kuma-data:
