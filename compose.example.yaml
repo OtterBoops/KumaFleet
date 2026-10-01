@@ -16,9 +16,9 @@ services:
     depends_on:
       - uptime-kuma
     environment:
-      # Connection to Uptime Kuma 
+      # Connection to Uptime Kuma (recommended: create a dedicated service account)
       - KUMA_URL=http://uptime-kuma:3001
-      - KUMA_USER=admin
+      - KUMA_USER=kumafleet
       - KUMA_PASS=your_strong_password
 
       # Optional: automatically populate a status page

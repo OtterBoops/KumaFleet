@@ -17,6 +17,8 @@ AutoKuma is great, but adding `kuma.*` labels to every single service across 40 
 
 ## Quick Start
 
+> **Note:** It's best to create a dedicated user in Uptime Kuma (e.g. `kumafleet`) under Settings > Users instead of using your personal admin account.
+
 Add KumaFleet directly to the same compose file as your Uptime Kuma instance:
 
 ```yaml
@@ -39,7 +41,7 @@ services:
       - uptime-kuma
     environment:
       - KUMA_URL=http://uptime-kuma:3001
-      - KUMA_USER=admin
+      - KUMA_USER=kumafleet
       - KUMA_PASS=your_strong_password
       - STATUS_PAGE_SLUG=homelab  # optional: groups containers on your status page
     volumes:
