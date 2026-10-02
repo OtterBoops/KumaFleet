@@ -66,10 +66,18 @@ volumes:
 | `DOCKER_HOST_NAME` | `Local Docker` | Display name of the Docker host inside Kuma |
 | `STATUS_PAGE_SLUG` | *(none)* | Status page slug to keep synced with grouped monitors |
 | `SYNC_INTERVAL` | `30` | Sync frequency in seconds |
-| `CLEANUP_STALE` | `false` | If `true`, removes monitors when containers are destroyed |
+| `AUTO_DEREGISTER` | `true` | Automatically deregister monitors from Kuma when containers are destroyed or ignored |
 | `DEFAULT_GROUP` | `Standalone` | Status page group name for non-compose containers |
 | `IGNORE_CONTAINERS` | `kumafleet,uptime-kuma` | Comma-separated names or wildcards (`*-dev,builder-*`) |
 | `SKIP_BUILDX` | `true` | Automatically ignore Docker Buildx / BuildKit builder instances |
+
+---
+
+### How Deregistration Works
+
+- **Stopped / crashing containers:** KumaFleet keeps them monitored so Uptime Kuma can flag them as **Down** and send alerts.
+- **Destroyed containers (`docker rm`):** KumaFleet automatically cleans up and deletes their monitors from Uptime Kuma on the next sync.
+- **Ignored containers:** Adding `kumafleet.ignore: "true"` cleanly purges the monitor from Uptime Kuma and strips it from status pages.
 
 ---
 
