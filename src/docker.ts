@@ -2,11 +2,8 @@ import http from "node:http";
 import { ContainerInfo, FleetConfig } from "./types.js";
 
 interface RawContainer {
-  Id: string;
   Names: string[];
   Image: string;
-  State: string;
-  Status: string;
   Labels?: Record<string, string>;
 }
 
@@ -15,63 +12,49 @@ export class DockerClient {
 
   public getContainers(config: FleetConfig): Promise<ContainerInfo[]> {
     return new Promise((resolve, reject) => {
-      const options: http.RequestOptions = {
-        socketPath: this.socketPath,
-        path: "/containers/json?all=0",
-        method: "GET"
-      };
-
-      const req = http.request(options, (res) => {
-        let body = "";
-        res.on("data", (chunk) => (body += chunk));
-        res.on("end", () => {
-          if (res.statusCode && res.statusCode >= 400) {
-            return reject(new Error(`Docker API returned status ${res.statusCode}: ${body}`));
-          }
-
-          try {
-            const rawList: RawContainer[] = JSON.parse(body);
-            const containers: ContainerInfo[] = [];
-
-            for (const item of rawList) {
-              const rawName = (item.Names[0] || "").replace(/^\//, "");
-              if (!rawName) continue;
-
-              const labels = item.Labels || {};
-              const explicitIgnore = labels["kumafleet.ignore"] === "true" || labels["kuma.ignore"] === "true";
-              const matchesPattern = config.ignorePatterns.some((pattern) => pattern.test(rawName));
-              const isBuildx = rawName.startsWith("buildx_buildkit_") || (Boolean(item.Image) && item.Image.includes("buildkit"));
-              const skipBuildx = config.skipBuildx && isBuildx;
-
-              const project = labels["com.docker.compose.project"] || "";
-              const customGroup = labels["kumafleet.group"] || labels["kuma.group"];
-              const groupName = customGroup || (project ? project : config.defaultGroup);
-
-              const customName = labels["kumafleet.name"] || labels["kuma.name"];
-              const intervalStr = labels["kumafleet.interval"] || labels["kuma.interval"];
-              const interval = intervalStr ? parseInt(intervalStr, 10) : undefined;
-
-              containers.push({
-                id: item.Id,
-                name: rawName,
-                image: item.Image,
-                state: item.State,
-                status: item.Status,
-                project,
-                ignored: explicitIgnore || matchesPattern || skipBuildx,
-                groupName,
-                customName,
-                interval
-              });
+      const req = http.request(
+        { socketPath: this.socketPath, path: "/containers/json?all=1", method: "GET", timeout: 10000 },
+        (res) => {
+          let body = "";
+          res.on("data", (chunk) => (body += chunk));
+          res.on("end", () => {
+            if (res.statusCode && res.statusCode >= 400) {
+              return reject(new Error(`Docker API HTTP ${res.statusCode}: ${body}`));
             }
+            try {
+              const rawList: RawContainer[] = JSON.parse(body);
+              const containers: ContainerInfo[] = [];
 
-            resolve(containers);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
+              for (const item of rawList) {
+                const name = (item.Names[0] || "").replace(/^\//, "");
+                if (!name) continue;
 
+                const labels = item.Labels || {};
+                const explicitIgnore = labels["kumafleet.ignore"] === "true" || labels["kuma.ignore"] === "true";
+                const matchesPattern = config.ignorePatterns.some((p) => p.test(name));
+                const isBuildx = name.startsWith("buildx_buildkit_") || (Boolean(item.Image) && item.Image.includes("buildkit"));
+
+                const rawInterval = labels["kumafleet.interval"] || labels["kuma.interval"];
+                const parsedInterval = rawInterval ? parseInt(rawInterval, 10) : NaN;
+
+                containers.push({
+                  name,
+                  ignored: explicitIgnore || matchesPattern || (config.skipBuildx && isBuildx),
+                  groupName: labels["kumafleet.group"] || labels["kuma.group"] || labels["com.docker.compose.project"] || config.defaultGroup,
+                  customName: labels["kumafleet.name"] || labels["kuma.name"],
+                  interval: !isNaN(parsedInterval) && parsedInterval >= 20 ? parsedInterval : undefined
+                });
+              }
+
+              resolve(containers);
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
+      );
+
+      req.on("timeout", () => req.destroy(new Error("Docker socket request timed out after 10s")));
       req.on("error", reject);
       req.end();
     });

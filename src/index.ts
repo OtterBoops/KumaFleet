@@ -4,10 +4,7 @@ import { KumaClient } from "./kuma.js";
 import { StatusPageGroup } from "./types.js";
 
 async function main() {
-  console.log("------------------------------------------------");
-  console.log(" KumaFleet - Zero-Touch Docker Monitoring");
-  console.log(" https://github.com/OtterBoops/KumaFleet");
-  console.log("------------------------------------------------");
+  console.log("------------------------------------------------\n KumaFleet - Zero-Touch Docker Monitoring\n https://github.com/OtterBoops/KumaFleet\n------------------------------------------------");
 
   const config = loadConfig();
   const docker = new DockerClient(config.dockerSocket);
@@ -28,78 +25,65 @@ async function main() {
 
       const existingMonitors = await kuma.getMonitors();
       const existingByContainer = new Map<string, number>();
+      const hostId = kuma.getDockerHostId();
 
       for (const [idStr, mon] of Object.entries(existingMonitors)) {
-        if (mon.type === "docker" && mon.docker_container) {
+        if (mon.type === "docker" && mon.docker_container && (!hostId || !mon.docker_host || mon.docker_host === hostId)) {
           existingByContainer.set(mon.docker_container, parseInt(idStr, 10));
         }
       }
 
       const activeNames = new Set(activeContainers.map((c) => c.name));
 
-      // 1. Delete stale monitors if cleanup is enabled
-      if (config.cleanupStale) {
-        for (const [containerName, monId] of existingByContainer.entries()) {
-          if (!activeNames.has(containerName)) {
-            await kuma.deleteMonitor(monId, containerName);
-            existingByContainer.delete(containerName);
+      if (config.autoDeregister) {
+        for (const [name, monId] of existingByContainer.entries()) {
+          if (!activeNames.has(name)) {
+            await kuma.deleteMonitor(monId, name);
+            existingByContainer.delete(name);
           }
         }
       }
 
-      // 2. Add newly discovered containers
-      const monitorGroupMap = new Map<string, number[]>();
+      const groups = new Map<string, number[]>();
 
-      for (const container of activeContainers) {
-        let monId = existingByContainer.get(container.name);
-
+      for (const c of activeContainers) {
+        let monId = existingByContainer.get(c.name);
         if (!monId) {
-          const newId = await kuma.addMonitor(container.name, container.customName, container.interval);
-          if (newId) {
-            monId = newId;
-            existingByContainer.set(container.name, newId);
-          }
+          monId = (await kuma.addMonitor(c.name, c.customName, c.interval)) || undefined;
+          if (monId) existingByContainer.set(c.name, monId);
         }
 
         if (monId) {
-          const groupName = container.groupName;
-          if (!monitorGroupMap.has(groupName)) {
-            monitorGroupMap.set(groupName, []);
-          }
-          monitorGroupMap.get(groupName)!.push(monId);
+          const list = groups.get(c.groupName) || [];
+          list.push(monId);
+          groups.set(c.groupName, list);
         }
       }
 
-      // 3. Sync status page if configured
-      if (config.statusPageSlug && monitorGroupMap.size > 0) {
-        const sortedGroups = Array.from(monitorGroupMap.keys()).sort();
-        const publicGroupList: StatusPageGroup[] = sortedGroups.map((groupName, idx) => ({
-          name: groupName,
-          weight: idx + 1,
-          monitorList: monitorGroupMap.get(groupName)!.map((id) => ({ id }))
+      if (config.statusPageSlug && groups.size > 0) {
+        const sorted = Array.from(groups.keys()).sort();
+        const pageGroups: StatusPageGroup[] = sorted.map((name, i) => ({
+          name,
+          weight: i + 1,
+          monitorList: groups.get(name)!.map((id) => ({ id }))
         }));
-
-        await kuma.updateStatusPage(config.statusPageSlug, publicGroupList);
+        await kuma.updateStatusPage(config.statusPageSlug, pageGroups);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[kumafleet] Sync error: ${msg}`);
+      console.error(`[kumafleet] Sync error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       isSyncing = false;
     }
   }
 
-  // Initial sync
   await syncFleet();
-
-  // Scheduled interval
   const timer = setInterval(syncFleet, config.syncIntervalMs);
 
-  function shutdown(signal: string) {
-    console.log(`[kumafleet] Received ${signal}. Shutting down gracefully...`);
+  const shutdown = (sig: string) => {
+    console.log(`[kumafleet] Received ${sig}. Exiting...`);
     clearInterval(timer);
     process.exit(0);
-  }
+  };
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));

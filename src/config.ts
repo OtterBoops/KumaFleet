@@ -3,7 +3,10 @@ import { FleetConfig } from "./types.js";
 function parseIgnoreList(raw: string | undefined): RegExp[] {
   const defaults = ["kumafleet", "uptime-kuma"];
   const list = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : defaults;
-  return list.map((item) => new RegExp(`^${item.replace(/\*/g, ".*")}$`, "i"));
+  return list.map((item) => {
+    const escaped = item.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+    return new RegExp(`^${escaped}$`, "i");
+  });
 }
 
 export function loadConfig(): FleetConfig {
@@ -26,7 +29,7 @@ export function loadConfig(): FleetConfig {
     dockerHostName: process.env.DOCKER_HOST_NAME || "Local Docker",
     statusPageSlug: process.env.STATUS_PAGE_SLUG?.trim() || undefined,
     syncIntervalMs: Math.max(5, syncIntervalSec) * 1000,
-    cleanupStale: process.env.CLEANUP_STALE === "true",
+    autoDeregister: process.env.AUTO_DEREGISTER !== "false" && process.env.AUTO_DEREGISTER !== "0",
     defaultGroup: process.env.DEFAULT_GROUP || "Standalone",
     ignorePatterns: parseIgnoreList(process.env.IGNORE_CONTAINERS),
     skipBuildx: process.env.SKIP_BUILDX !== "false" && process.env.SKIP_BUILDX !== "0"
