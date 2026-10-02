@@ -27,8 +27,8 @@ services:
       # Optional: sync interval in seconds (default: 30)
       - SYNC_INTERVAL=30
 
-      # Optional: delete monitors in Kuma when container is destroyed
-      - CLEANUP_STALE=false
+      # Optional: automatically remove monitors in Kuma when container is deleted or ignored (default: true)
+      # - AUTO_DEREGISTER=true
 
       # Optional: comma-separated ignore list (wildcards supported)
       - IGNORE_CONTAINERS=kumafleet,uptime-kuma,*-dev,test-*
@@ -37,6 +37,11 @@ services:
       # - SKIP_BUILDX=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
 
 volumes:
   kuma-data:
