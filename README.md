@@ -40,10 +40,10 @@ services:
     depends_on:
       - uptime-kuma
     environment:
-      - KUMA_URL=http://uptime-kuma:3001
-      - KUMA_USER=${KUMA_USER}
-      - KUMA_PASS=${KUMA_PASS}
-      - STATUS_PAGE_SLUG=homelab  # optional: groups containers on your status page
+      - KUMA_URL=${KUMA_URL:-http://uptime-kuma:3001}
+      - KUMA_USER=${KUMA_USER:-admin}
+      - KUMA_PASS=${KUMA_PASS:-password}
+      - STATUS_PAGE_SLUG=${STATUS_PAGE_SLUG:-homelab}  # optional: groups containers on your status page
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
