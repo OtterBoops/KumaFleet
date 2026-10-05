@@ -68,7 +68,7 @@ volumes:
 | `SYNC_INTERVAL` | `30` | Sync frequency in seconds |
 | `AUTO_DEREGISTER` | `true` | Automatically deregister monitors from Kuma when containers are destroyed or ignored |
 | `DEFAULT_GROUP` | `Standalone` | Status page group name for non-compose containers |
-| `IGNORE_CONTAINERS` | `kumafleet,uptime-kuma` | Comma-separated names or wildcards (`*-dev,builder-*`) |
+| `IGNORE_CONTAINERS` | `uptime-kuma` | Comma-separated names or wildcards (`*-dev,builder-*`) |
 | `SKIP_BUILDX` | `true` | Automatically ignore Docker Buildx / BuildKit builder instances |
 
 ---

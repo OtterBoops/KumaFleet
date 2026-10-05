@@ -1,7 +1,7 @@
 import { FleetConfig } from "./types.js";
 
 function parseIgnoreList(raw: string | undefined): RegExp[] {
-  const defaults = ["kumafleet", "uptime-kuma"];
+  const defaults = ["uptime-kuma"];
   const list = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : defaults;
   return list.map((item) => {
     const escaped = item.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");

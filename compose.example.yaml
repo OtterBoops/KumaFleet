@@ -30,8 +30,8 @@ services:
       # Optional: automatically remove monitors in Kuma when container is deleted or ignored (default: true)
       # - AUTO_DEREGISTER=true
 
-      # Optional: comma-separated ignore list (wildcards supported)
-      - IGNORE_CONTAINERS=kumafleet,uptime-kuma,*-dev,test-*
+      # Optional: comma-separated ignore list (wildcards supported, default ignores uptime-kuma)
+      - IGNORE_CONTAINERS=uptime-kuma,*-dev,test-*
 
       # Optional: ignore Docker buildx / buildkit builders (default: true)
       # - SKIP_BUILDX=true
