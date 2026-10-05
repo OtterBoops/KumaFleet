@@ -41,8 +41,8 @@ services:
       - uptime-kuma
     environment:
       - KUMA_URL=http://uptime-kuma:3001
-      - KUMA_USER=kumafleet
-      - KUMA_PASS=your_strong_password
+      - KUMA_USER=${KUMA_USER}
+      - KUMA_PASS=${KUMA_PASS}
       - STATUS_PAGE_SLUG=homelab  # optional: groups containers on your status page
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
