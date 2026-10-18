@@ -32,4 +32,5 @@ export interface FleetConfig {
   defaultGroup: string;
   ignorePatterns: RegExp[];
   skipBuildx: boolean;
+  skipSablier: boolean;
 }

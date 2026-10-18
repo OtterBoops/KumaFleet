@@ -31,6 +31,8 @@ export class DockerClient {
 
                 const labels = item.Labels || {};
                 const explicitIgnore = labels["kumafleet.ignore"] === "true" || labels["kuma.ignore"] === "true";
+                const explicitInclude = labels["kumafleet.ignore"] === "false" || labels["kuma.ignore"] === "false";
+                const isSablier = labels["sablier.enable"] === "true" && !explicitInclude;
                 const matchesPattern = config.ignorePatterns.some((p) => p.test(name));
                 const isBuildx = name.startsWith("buildx_buildkit_") || (Boolean(item.Image) && item.Image.includes("buildkit"));
 
@@ -39,7 +41,7 @@ export class DockerClient {
 
                 containers.push({
                   name,
-                  ignored: explicitIgnore || matchesPattern || (config.skipBuildx && isBuildx),
+                  ignored: explicitIgnore || (config.skipSablier && isSablier) || matchesPattern || (config.skipBuildx && isBuildx),
                   groupName: labels["kumafleet.group"] || labels["kuma.group"] || labels["com.docker.compose.project"] || config.defaultGroup,
                   customName: labels["kumafleet.name"] || labels["kuma.name"],
                   interval: !isNaN(parsedInterval) && parsedInterval >= 20 ? parsedInterval : undefined

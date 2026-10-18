@@ -32,6 +32,7 @@ export function loadConfig(): FleetConfig {
     autoDeregister: process.env.AUTO_DEREGISTER !== "false" && process.env.AUTO_DEREGISTER !== "0",
     defaultGroup: process.env.DEFAULT_GROUP || "Standalone",
     ignorePatterns: parseIgnoreList(process.env.IGNORE_CONTAINERS),
-    skipBuildx: process.env.SKIP_BUILDX !== "false" && process.env.SKIP_BUILDX !== "0"
+    skipBuildx: process.env.SKIP_BUILDX !== "false" && process.env.SKIP_BUILDX !== "0",
+    skipSablier: process.env.SKIP_SABLIER !== "false" && process.env.SKIP_SABLIER !== "0"
   };
 }

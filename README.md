@@ -70,6 +70,7 @@ volumes:
 | `DEFAULT_GROUP` | `Standalone` | Status page group name for non-compose containers |
 | `IGNORE_CONTAINERS` | `uptime-kuma` | Comma-separated names or wildcards (`*-dev,builder-*`) |
 | `SKIP_BUILDX` | `true` | Automatically ignore Docker Buildx / BuildKit builder instances |
+| `SKIP_SABLIER` | `true` | Automatically ignore Sablier on-demand (`sablier.enable: "true"`) sleeping containers |
 
 ---
 
