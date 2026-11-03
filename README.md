@@ -19,6 +19,8 @@ AutoKuma is great, but adding `kuma.*` labels to every single service across 40 
 
 > **Note on Uptime Kuma v2:** Monitors in Uptime Kuma v2 are strictly tied to the account that creates them (`user_id`). If you use a separate service account, monitors will be managed and displayed on status pages, but hidden from your primary dashboard and Quick Stats. Use your primary account credentials if you want them on your main dashboard.
 
+The account must not have 2FA enabled: KumaFleet authenticates as a service and cannot supply a TOTP code, so a 2FA-enabled account will refuse to start.
+
 Add KumaFleet directly to the same compose file as your Uptime Kuma instance:
 
 ```yaml
@@ -100,8 +102,8 @@ services:
       # Override the status page group
       kumafleet.group: "Backend Services"
 
-      # Override the check interval (seconds)
-      kumafleet.interval: "15"
+      # Override the check interval (seconds, minimum 20)
+      kumafleet.interval: "120"
 ```
 
 *(Note: `kuma.ignore`, `kuma.name`, and `kuma.group` are also accepted for backward compatibility with AutoKuma).*

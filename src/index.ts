@@ -20,12 +20,17 @@ async function main() {
     isSyncing = true;
 
     try {
+      const hostId = kuma.getDockerHostId() || (await kuma.ensureDockerHost());
+      if (!hostId) {
+        console.error("[kumafleet] No Docker host configured; retrying on next sync.");
+        return;
+      }
+
       const containers = await docker.getContainers(config);
       const activeContainers = containers.filter((c) => !c.ignored);
 
       const existingMonitors = await kuma.getMonitors();
       const existingByContainer = new Map<string, number>();
-      const hostId = kuma.getDockerHostId();
 
       for (const [idStr, mon] of Object.entries(existingMonitors)) {
         if (mon.type === "docker" && mon.docker_container && (!hostId || !mon.docker_host || mon.docker_host === hostId)) {

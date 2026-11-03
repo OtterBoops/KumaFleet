@@ -42,6 +42,10 @@ export class KumaClient {
         }
       });
 
+      this.socket.on("deleteMonitorFromList", (monitorId: number) => {
+        delete this.monitors[String(monitorId)];
+      });
+
       this.socket.on("connect", () => {
         console.log(`[kumafleet] Connected to Uptime Kuma at ${this.config.kumaUrl}`);
         this.login()
@@ -78,10 +82,17 @@ export class KumaClient {
 
   private login(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.socket!.emit("login", { username: this.config.kumaUser, password: this.config.kumaPass }, (res: { ok: boolean; msg?: string }) => {
+      this.socket!.emit("login", { username: this.config.kumaUser, password: this.config.kumaPass }, (res: { ok: boolean; msg?: string; tokenRequired?: boolean }) => {
         if (res?.ok) {
           console.log(`[kumafleet] Authenticated as '${this.config.kumaUser}'`);
           resolve();
+        } else if (res?.tokenRequired) {
+          // A 2FA account is answered with { tokenRequired: true } and no ok, so it must not fall through to the generic failure.
+          reject(
+            new Error(
+              `Kuma account '${this.config.kumaUser}' has 2FA enabled. KumaFleet authenticates as a service and cannot supply a TOTP code - use a Kuma account without 2FA.`,
+            ),
+          );
         } else {
           reject(new Error(`Login failed: ${res?.msg || "unknown error"}`));
         }
@@ -89,7 +100,7 @@ export class KumaClient {
     });
   }
 
-  public async ensureDockerHost(): Promise<number> {
+  public async ensureDockerHost(): Promise<number | null> {
     if (this.dockerHostId) return this.dockerHostId;
 
     const existing = this.knownHosts.find((h) => (h.docker_daemon || h.dockerDaemon) === this.config.dockerSocket || h.name === this.config.dockerHostName);
@@ -104,9 +115,13 @@ export class KumaClient {
         "addDockerHost",
         { name: this.config.dockerHostName, dockerType: "socket", dockerDaemon: this.config.dockerSocket },
         null,
-        (res: { ok: boolean; id?: number }) => {
-          this.dockerHostId = res?.id || 1;
-          console.log(`[kumafleet] Configured Docker host ID: ${this.dockerHostId}`);
+        (res: { ok: boolean; id?: number; msg?: string }) => {
+          if (res?.ok && res.id) {
+            this.dockerHostId = res.id;
+            console.log(`[kumafleet] Configured Docker host ID: ${this.dockerHostId}`);
+          } else {
+            console.error(`[kumafleet] Failed to configure Docker host: ${res?.msg || "unknown error"}`);
+          }
           resolve(this.dockerHostId);
         }
       );
