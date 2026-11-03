@@ -2,7 +2,12 @@ import { FleetConfig } from "./types.js";
 
 function parseIgnoreList(raw: string | undefined): RegExp[] {
   const defaults = ["uptime-kuma"];
-  const list = raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : defaults;
+  const list = raw
+    ? raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : defaults;
   return list.map((item) => {
     const escaped = item.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
     return new RegExp(`^${escaped}$`, "i");
@@ -33,6 +38,6 @@ export function loadConfig(): FleetConfig {
     defaultGroup: process.env.DEFAULT_GROUP || "Standalone",
     ignorePatterns: parseIgnoreList(process.env.IGNORE_CONTAINERS),
     skipBuildx: process.env.SKIP_BUILDX !== "false" && process.env.SKIP_BUILDX !== "0",
-    skipSablier: process.env.SKIP_SABLIER !== "false" && process.env.SKIP_SABLIER !== "0"
+    skipSablier: process.env.SKIP_SABLIER !== "false" && process.env.SKIP_SABLIER !== "0",
   };
 }

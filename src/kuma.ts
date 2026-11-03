@@ -26,7 +26,9 @@ export class KumaClient {
       this.socket.on("dockerHostList", (list: DockerHost[]) => {
         if (!Array.isArray(list)) return;
         this.knownHosts = list;
-        const match = list.find((h) => (h.docker_daemon || h.dockerDaemon) === this.config.dockerSocket || h.name === this.config.dockerHostName);
+        const match = list.find(
+          (h) => (h.docker_daemon || h.dockerDaemon) === this.config.dockerSocket || h.name === this.config.dockerHostName,
+        );
         if (match) this.dockerHostId = match.id;
       });
 
@@ -82,28 +84,34 @@ export class KumaClient {
 
   private login(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.socket!.emit("login", { username: this.config.kumaUser, password: this.config.kumaPass }, (res: { ok: boolean; msg?: string; tokenRequired?: boolean }) => {
-        if (res?.ok) {
-          console.log(`[kumafleet] Authenticated as '${this.config.kumaUser}'`);
-          resolve();
-        } else if (res?.tokenRequired) {
-          // A 2FA account is answered with { tokenRequired: true } and no ok, so it must not fall through to the generic failure.
-          reject(
-            new Error(
-              `Kuma account '${this.config.kumaUser}' has 2FA enabled. KumaFleet authenticates as a service and cannot supply a TOTP code - use a Kuma account without 2FA.`,
-            ),
-          );
-        } else {
-          reject(new Error(`Login failed: ${res?.msg || "unknown error"}`));
-        }
-      });
+      this.socket!.emit(
+        "login",
+        { username: this.config.kumaUser, password: this.config.kumaPass },
+        (res: { ok: boolean; msg?: string; tokenRequired?: boolean }) => {
+          if (res?.ok) {
+            console.log(`[kumafleet] Authenticated as '${this.config.kumaUser}'`);
+            resolve();
+          } else if (res?.tokenRequired) {
+            // A 2FA account is answered with { tokenRequired: true } and no ok, so it must not fall through to the generic failure.
+            reject(
+              new Error(
+                `Kuma account '${this.config.kumaUser}' has 2FA enabled. KumaFleet authenticates as a service and cannot supply a TOTP code - use a Kuma account without 2FA.`,
+              ),
+            );
+          } else {
+            reject(new Error(`Login failed: ${res?.msg || "unknown error"}`));
+          }
+        },
+      );
     });
   }
 
   public async ensureDockerHost(): Promise<number | null> {
     if (this.dockerHostId) return this.dockerHostId;
 
-    const existing = this.knownHosts.find((h) => (h.docker_daemon || h.dockerDaemon) === this.config.dockerSocket || h.name === this.config.dockerHostName);
+    const existing = this.knownHosts.find(
+      (h) => (h.docker_daemon || h.dockerDaemon) === this.config.dockerSocket || h.name === this.config.dockerHostName,
+    );
     if (existing) {
       this.dockerHostId = existing.id;
       console.log(`[kumafleet] Reusing Docker host ID: ${this.dockerHostId}`);
@@ -123,7 +131,7 @@ export class KumaClient {
             console.error(`[kumafleet] Failed to configure Docker host: ${res?.msg || "unknown error"}`);
           }
           resolve(this.dockerHostId);
-        }
+        },
       );
     });
   }
@@ -151,7 +159,7 @@ export class KumaClient {
         conditions: [],
         kafkaProducerBrokers: [],
         kafkaProducerSaslOptions: {},
-        rabbitmqNodes: []
+        rabbitmqNodes: [],
       };
 
       this.socket!.emit("add", payload, (res: { ok: boolean; msg?: string; monitorID?: number }) => {
@@ -162,7 +170,7 @@ export class KumaClient {
             name: displayName || name,
             type: "docker",
             docker_container: name,
-            docker_host: this.dockerHostId || undefined
+            docker_host: this.dockerHostId || undefined,
           };
           resolve(res.monitorID);
         } else {

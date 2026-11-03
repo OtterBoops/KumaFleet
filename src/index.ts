@@ -4,7 +4,9 @@ import { KumaClient } from "./kuma.js";
 import { StatusPageGroup } from "./types.js";
 
 async function main() {
-  console.log("------------------------------------------------\n KumaFleet - Zero-Touch Docker Monitoring\n https://github.com/OtterBoops/KumaFleet\n------------------------------------------------");
+  console.log(
+    "------------------------------------------------\n KumaFleet - Zero-Touch Docker Monitoring\n https://github.com/OtterBoops/KumaFleet\n------------------------------------------------",
+  );
 
   const config = loadConfig();
   const docker = new DockerClient(config.dockerSocket);
@@ -70,7 +72,7 @@ async function main() {
         const pageGroups: StatusPageGroup[] = sorted.map((name, i) => ({
           name,
           weight: i + 1,
-          monitorList: groups.get(name)!.map((id) => ({ id }))
+          monitorList: groups.get(name)!.map((id) => ({ id })),
         }));
         await kuma.updateStatusPage(config.statusPageSlug, pageGroups);
       }
